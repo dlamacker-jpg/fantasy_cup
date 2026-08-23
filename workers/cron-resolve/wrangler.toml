@@ -1,0 +1,12 @@
+name = "fantasy-cup-cron-resolve"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# Every Thursday at 8:20 PM ET = Friday 00:20 UTC
+# (5 minutes after TNF kickoff to allow for any delays)
+[triggers]
+crons = ["20 0 * * 5"]
+
+[vars]
+APP_URL = "https://mariokartcup.empirefantasy.football"
+# Set CRON_SECRET via `wrangler secret put CRON_SECRET`

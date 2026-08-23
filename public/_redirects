@@ -1,0 +1,2 @@
+# SPA fallback — Cloudflare Pages Functions automatically take priority for /api/*
+/*    /index.html   200

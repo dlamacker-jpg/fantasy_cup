@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-mk-darker text-white;
+    font-family: 'Montserrat', sans-serif;
+  }
+}
+
+@layer components {
+  .rainbow-road {
+    background: linear-gradient(
+      90deg,
+      #E52521, #FBBE00, #43B047, #049CD8, #7B2D8E, #E52521
+    );
+    background-size: 200% 100%;
+    animation: rainbow 3s linear infinite;
+  }
+
+  .rainbow-text {
+    background: linear-gradient(90deg, #E52521, #FBBE00, #43B047, #049CD8, #7B2D8E);
+    background-size: 200% 100%;
+    animation: rainbow 3s linear infinite;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .card-glow {
+    box-shadow: 0 0 15px rgba(5, 156, 216, 0.15), 0 0 30px rgba(5, 156, 216, 0.05);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  .card-glow:hover {
+    box-shadow: 0 0 20px rgba(5, 156, 216, 0.3), 0 0 40px rgba(5, 156, 216, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .gold-row { background: linear-gradient(90deg, rgba(255,215,0,0.2), rgba(255,215,0,0.05)); border-left: 4px solid #FFD700; }
+  .silver-row { background: linear-gradient(90deg, rgba(192,192,192,0.2), rgba(192,192,192,0.05)); border-left: 4px solid #C0C0C0; }
+  .bronze-row { background: linear-gradient(90deg, rgba(205,127,50,0.2), rgba(205,127,50,0.05)); border-left: 4px solid #CD7F32; }
+
+  .tier-common { @apply border-gray-400; }
+  .tier-uncommon { @apply border-green-400; }
+  .tier-rare { @apply border-blue-400; }
+  .tier-epic { @apply border-purple-400; }
+  .tier-legendary { @apply border-yellow-400; }
+
+  .checkered-flag {
+    background-image:
+      linear-gradient(45deg, rgba(255,255,255,0.015) 25%, transparent 25%),
+      linear-gradient(-45deg, rgba(255,255,255,0.015) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.015) 75%),
+      linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.015) 75%);
+    background-size: 40px 40px;
+    background-position: 0 0, 0 20px, 20px -20px, -20px 0;
+  }
+
+  /* Hide scrollbar but keep scrollable */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+  }
+}
+
+/* Ensure smooth scrolling and safe areas on mobile */
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  /* Prevent content from going under notch on modern phones */
+  body {
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* Better select/input styling on mobile */
+  select, input, textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  @media (min-width: 640px) {
+    select, input, textarea {
+      font-size: inherit;
+    }
+  }
+}

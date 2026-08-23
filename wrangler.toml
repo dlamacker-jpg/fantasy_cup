@@ -1,0 +1,11 @@
+name = "fantasy-cup"
+compatibility_date = "2024-01-01"
+
+# KV namespace for power-up data
+# After creating the namespace, replace the id below:
+#   npx wrangler kv namespace create POWERUPS_KV
+[[kv_namespaces]]
+binding = "POWERUPS_KV"
+id = "60c53f385caa403eab6e71b731d3e888"
+# For local dev:
+# preview_id = "REPLACE_WITH_PREVIEW_KV_ID"
