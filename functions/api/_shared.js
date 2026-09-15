@@ -4,9 +4,9 @@ export const SLEEPER_API = 'https://api.sleeper.app/v1';
 
 // 2026 season league IDs (must match frontend leagueConfig.js SEASONS[2026])
 export const LEAGUES = {
-  mushroom: { id: '1391995568863051776', name: 'Mushroom Cup' },
-  flower:   { id: '1391926961898528768', name: 'Flower Cup' },
-  star:     { id: '1391995745485225984', name: 'Star Cup' },
+  mushroom: { id: '1391995568863051776', name: 'Mushroom Cup', type: 'standard' },
+  flower:   { id: '1391926961898528768', name: 'Flower Cup',   type: 'bestball' },
+  star:     { id: '1391995745485225984', name: 'Star Cup',     type: 'auction' },
 };
 
 // Owner ID → info (must match frontend leagueConfig.js exactly)
