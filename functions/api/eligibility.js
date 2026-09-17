@@ -2,12 +2,13 @@
 // Auto-detects which owners earned power-up rolls for a given week
 // across all 3 leagues using 4 criteria:
 //   1. Largest margin of victory
-//   2. Top player scorer (including bench) — nullified if a Free Agent outscored all rostered players
+//   2. Top player scorer (including bench) — nullified if the overall top scorer (across all leagues) isn't rostered here
 //   3. Best roster accuracy (actual vs optimal) — skipped for Best Ball leagues
 //   4. Worst optimized score (lowest optimal lineup — consolation roll) — skipped for Best Ball leagues
 //
 // Optimal lineup uses positional constraints (QB/RB/WR/TE/FLEX).
 // Position data: KV cache → inferred from starters + NFL stats (QBs detected via passing stats).
+// FA check uses cross-league players_points (Sleeper's own scoring) — NOT raw NFL stats recomputation.
 
 import { LEAGUES, OWNERS, SLEEPER_API, json, handleCors } from './_shared.js';
 
@@ -129,18 +130,6 @@ function computePositionalOptimal(playersPoints, positionMap, rosterPositions, n
   return Math.round(total * 100) / 100;
 }
 
-// Compute fantasy points from raw NFL stats using scoring settings.
-// Only used for the FA check (non-rostered players).
-function computeFantasyPoints(playerStats, scoringSettings) {
-  let total = 0;
-  for (const [stat, value] of Object.entries(playerStats || {})) {
-    if (scoringSettings[stat] != null && typeof value === 'number') {
-      total += value * scoringSettings[stat];
-    }
-  }
-  return total;
-}
-
 // Build roster_id → owner mapping for a league
 async function buildRosterMap(leagueId) {
   const [rosters, users] = await Promise.all([
@@ -231,6 +220,22 @@ export async function onRequestGet(context) {
       posSource = `starters-${Object.keys(positionMap).length}`;
     }
 
+    // ── Step 2b: Find overall top scorer across ALL leagues (Sleeper's own scoring) ──
+    // Cross-reference players_points from all three leagues to find the single
+    // highest-scoring player. Used for the FA check: if this player isn't rostered
+    // in a given league, a free agent outscored all rostered players → no award.
+    let overallTopScorer = { playerId: null, points: 0, fromCup: null };
+    for (const [cupKey, data] of Object.entries(leagueData)) {
+      for (const m of data.matchups) {
+        const pp = m.players_points || {};
+        for (const [playerId, pts] of Object.entries(pp)) {
+          if (pts > overallTopScorer.points) {
+            overallTopScorer = { playerId, points: pts, fromCup: cupKey };
+          }
+        }
+      }
+    }
+
     // ── Step 3: Process each league ──
     const results = {};
 
@@ -285,38 +290,20 @@ export async function onRequestGet(context) {
         playerId: topPlayer.playerId,
       } : null;
 
-      // FA check: find the highest-scoring FREE AGENT and only nullify
-      // if they clearly outscored the top rostered player.
-      // We compare FA computed points against the rostered player's actual Sleeper score.
+      // FA check: cross-reference against the overall top scorer found across ALL leagues.
+      // If the highest-scoring player (from any league's players_points) is NOT rostered
+      // in THIS league, then a free agent outscored all rostered players → nullify award.
+      // Uses only Sleeper's own scoring data — no recomputation from raw NFL stats.
       let faNote = null;
-      if (nflStats && topPlayerScorerResult) {
-        // Collect all rostered player IDs in this league
+      if (overallTopScorer.playerId && topPlayerScorerResult) {
         const rosteredIds = new Set();
         matchups.forEach(m => {
           (m.players || []).forEach(pid => rosteredIds.add(String(pid)));
         });
 
-        // Find the highest-scoring non-rostered INDIVIDUAL player
-        // Skip team defenses (TEAM_CHI, TEAM_DAL, etc.) — these leagues have no DEF slot
-        let faTopPoints = 0;
-        let faTopPlayerId = null;
-        for (const [playerId, stats] of Object.entries(nflStats)) {
-          if (!/^\d+$/.test(playerId)) continue; // skip non-player entities (team DEF, etc.)
-          if (rosteredIds.has(String(playerId))) continue; // skip rostered
-          const pts = computeFantasyPoints(stats, scoringSettings);
-          if (pts > faTopPoints) {
-            faTopPoints = pts;
-            faTopPlayerId = playerId;
-          }
-        }
-
-        // Only nullify with a confidence margin (accounts for scoring computation differences)
-        const margin = Math.max(3, topPlayerScorerResult.points * 0.05);
-        if (faTopPlayerId && faTopPoints > topPlayerScorerResult.points + margin) {
-          faNote = `FA ${faTopPlayerId} scored ~${Math.round(faTopPoints * 100) / 100} pts vs rostered top ${topPlayerScorerResult.points} pts — no award`;
+        if (!rosteredIds.has(String(overallTopScorer.playerId))) {
+          faNote = `Top scorer ${overallTopScorer.playerId} (${overallTopScorer.points} pts in ${overallTopScorer.fromCup}) not rostered here — no award`;
           topPlayerScorerResult = null;
-        } else if (faTopPlayerId && faTopPoints > topPlayerScorerResult.points) {
-          faNote = `FA ${faTopPlayerId} ~${Math.round(faTopPoints * 100) / 100} pts (within margin of ${topPlayerScorerResult.points}) — award preserved`;
         }
       }
 
