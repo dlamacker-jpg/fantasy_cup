@@ -296,10 +296,12 @@ export async function onRequestGet(context) {
           (m.players || []).forEach(pid => rosteredIds.add(String(pid)));
         });
 
-        // Find the highest-scoring non-rostered player
+        // Find the highest-scoring non-rostered INDIVIDUAL player
+        // Skip team defenses (TEAM_CHI, TEAM_DAL, etc.) — these leagues have no DEF slot
         let faTopPoints = 0;
         let faTopPlayerId = null;
         for (const [playerId, stats] of Object.entries(nflStats)) {
+          if (!/^\d+$/.test(playerId)) continue; // skip non-player entities (team DEF, etc.)
           if (rosteredIds.has(String(playerId))) continue; // skip rostered
           const pts = computeFantasyPoints(stats, scoringSettings);
           if (pts > faTopPoints) {
